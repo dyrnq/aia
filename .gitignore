@@ -1,0 +1,9 @@
+.vagrant/
+*.log
+ext
+aia
+project.md
+test.sh
+example*.txt
+build.sh
+dist
