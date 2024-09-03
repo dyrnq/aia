@@ -14,6 +14,7 @@ import (
     "os"
     "strings"
     "fmt"
+    "sigs.k8s.io/yaml"
 )
 
 var (
@@ -133,6 +134,11 @@ func setupRouter(confVar conf.Config) *gin.Engine {
         decodedBytes, err := base64.StdEncoding.DecodeString(postConfig.Data)
         if err != nil {
             log.Printf("Error reading file: %v", err)
+            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        }
+        // 尝试解析 YAML 文件
+        var data interface{}
+        if err := yaml.Unmarshal(decodedBytes, &data); err != nil {
             c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         }
         _, err = file.Write(decodedBytes)
