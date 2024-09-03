@@ -77,6 +77,10 @@ func escapeBashSpecialChars(input string) string {
     return input
 }
 
+func handleError(c *gin.Context, err error, status int) {
+    log.Printf("Error: %v", err)
+    c.AbortWithStatusJSON(status, gin.H{"error": err.Error()})
+}
 
 func setupRouter(confVar conf.Config) *gin.Engine {
     // 定义正则表达式，使用 (?i) 使其忽略大小写
@@ -100,54 +104,57 @@ func setupRouter(confVar conf.Config) *gin.Engine {
         filePath := confVar.ApisixConfig
         content, err := ioutil.ReadFile(filePath)
         if err != nil {
-            log.Printf("Error reading file: %v", err)
-            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-        }else{
-
-            // 将文件内容编码为 Base64
-            encoded := base64.StdEncoding.EncodeToString(content)
-            // 打印 Base64 编码的字符串
-            // log.Println("Base64 Encoded Content:")
-            // log.Println(encoded)
-
-            c.JSON(http.StatusOK, gin.H{"message": "success","data": encoded })
-
+            handleError(c, err, http.StatusBadRequest)
+            return
         }
+
+        // 将文件内容编码为 Base64
+        encoded := base64.StdEncoding.EncodeToString(content)
+        // 打印 Base64 编码的字符串
+        // log.Println("Base64 Encoded Content:")
+        // log.Println(encoded)
+
+        c.JSON(http.StatusOK, gin.H{"message": "success","data": encoded })
+
+        
     })
 
     router.POST("/api/v1/config", apiKeyMiddleware(confVar.XApiKey), func(c *gin.Context) {
         filePath := confVar.ApisixConfig
-        file, err := os.Create(filePath)
-        if err != nil {
-            log.Printf("Error reading file: %v", err)
-            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        }
-        defer file.Close()
+
         var postConfig PostConfig
         // 绑定 JSON 数据到结构体
         if err := c.ShouldBindJSON(&postConfig); err != nil {
             // 如果绑定失败，返回 400 Bad Request
-            log.Printf("Error reading file: %v", err)
-            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+            handleError(c, err, http.StatusBadRequest)
             return
         }
         decodedBytes, err := base64.StdEncoding.DecodeString(postConfig.Data)
         if err != nil {
-            log.Printf("Error reading file: %v", err)
-            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+            handleError(c, err, http.StatusBadRequest)
+            return
         }
         // 尝试解析 YAML 文件
         var data interface{}
         if err := yaml.Unmarshal(decodedBytes, &data); err != nil {
-            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+            handleError(c, err, http.StatusBadRequest)
+            return
         }
+        // 写入文件
+        file, err := os.Create(filePath)
+        if err != nil {
+            handleError(c, err, http.StatusBadRequest)
+            return
+        }
+        defer file.Close()
         _, err = file.Write(decodedBytes)
         if err != nil {
-            log.Printf("Error reading file: %v", err)
-            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        }else {
-            c.JSON(http.StatusOK, gin.H{"message": "success"})
+            handleError(c, err, http.StatusBadRequest)
+            return
         }
+        
+        c.JSON(http.StatusOK, gin.H{"message": "success"})
+        
     })
 
     router.GET("/api/v1/reload", apiKeyMiddleware(confVar.XApiKey), func(c *gin.Context) {
@@ -160,11 +167,13 @@ func setupRouter(confVar conf.Config) *gin.Engine {
         outStr, errStr := string(stdout.Bytes()), string(stderr.Bytes())
         
         if err != nil {
-            log.Printf("Error reading file: %v", err)
-            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "errStr" : errStr })
-        } else {
-            c.JSON(http.StatusOK, gin.H{"message": "success" ,"outStr" : outStr, "errStr" : errStr })
+            log.Printf("Error: %v", err)
+            c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error(), "errStr" : errStr })
+            return
         }
+        
+        c.JSON(http.StatusOK, gin.H{"message": "success" ,"outStr" : outStr, "errStr" : errStr })
+        
     })
 
     router.GET("/api/v1/restart", apiKeyMiddleware(confVar.XApiKey), func(c *gin.Context) {
@@ -177,11 +186,12 @@ func setupRouter(confVar conf.Config) *gin.Engine {
         outStr, errStr := string(stdout.Bytes()), string(stderr.Bytes())
         
         if err != nil {
-            log.Printf("Error reading file: %v", err)
-            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "errStr" : errStr })
-        } else {
-            c.JSON(http.StatusOK, gin.H{"message": "success" ,"outStr" : outStr, "errStr" : errStr })
+            log.Printf("Error: %v", err)
+            c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error(), "errStr" : errStr })
+            return
         }
+        
+        c.JSON(http.StatusOK, gin.H{"message": "success" ,"outStr" : outStr, "errStr" : errStr })
     })
     
 
@@ -195,11 +205,12 @@ func setupRouter(confVar conf.Config) *gin.Engine {
         outStr, errStr := string(stdout.Bytes()), string(stderr.Bytes())
         
         if err != nil {
-            log.Printf("Error reading file: %v", err)
-            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "errStr" : errStr })
-        } else {
-            c.JSON(http.StatusOK, gin.H{"message": "success" ,"outStr" : outStr, "errStr" : errStr })
+            log.Printf("Error: %v", err)
+            c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error(), "errStr" : errStr })
+            return
         }
+        
+        c.JSON(http.StatusOK, gin.H{"message": "success" ,"outStr" : outStr, "errStr" : errStr })
     })
 
     router.GET("/api/v1/start", apiKeyMiddleware(confVar.XApiKey), func(c *gin.Context) {
@@ -212,11 +223,12 @@ func setupRouter(confVar conf.Config) *gin.Engine {
         outStr, errStr := string(stdout.Bytes()), string(stderr.Bytes())
         
         if err != nil {
-            log.Printf("Error reading file: %v", err)
-            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error(), "errStr" : errStr })
-        } else {
-            c.JSON(http.StatusOK, gin.H{"message": "success" ,"outStr" : outStr, "errStr" : errStr })
+            log.Printf("Error: %v", err)
+            c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error(), "errStr" : errStr })
+            return
         }
+        
+        c.JSON(http.StatusOK, gin.H{"message": "success" ,"outStr" : outStr, "errStr" : errStr })
     })
     // 定义根路由的处理程序
     router.GET("/", func(c *gin.Context) {
