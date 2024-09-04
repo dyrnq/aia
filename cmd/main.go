@@ -1,6 +1,7 @@
 package main
 import (
     "log"
+    "net"
     "net/http"
     "os/exec"
     "bytes"
@@ -35,6 +36,34 @@ func apiKeyMiddleware(param string) gin.HandlerFunc {
         }
         c.Next() // 继续处理请求
     }
+}
+
+// IPWhitelistMiddleware 创建一个中间件来检查 IP 白名单
+func IPWhitelistMiddleware(allowedIPs []string) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        clientIP := c.ClientIP()
+
+        // 检查 IP 是否在允许的列表中
+        for _, ip := range allowedIPs {
+            if ip == clientIP || checkIPRange(ip, clientIP) {
+                c.Next() // 允许访问
+                return
+            }
+        }
+
+        // 拒绝访问
+        c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+        c.Abort()
+    }
+}
+
+// checkIPRange 检查给定的 IP 是否在范围内
+func checkIPRange(cidr string, ip string) bool {
+    _, ipnet, err := net.ParseCIDR(cidr)
+    if err != nil {
+        return false
+    }
+    return ipnet.Contains(net.ParseIP(ip))
 }
 
 // 定义一个结构体，用于接收 JSON 数据
@@ -99,6 +128,21 @@ func setupRouter(confVar conf.Config) *gin.Engine {
     // // 使用中间件
     // router.Use(apiKeyMiddleware(confVar.XApiKey))
 
+    // 定义允许的 IP 地址和范围
+    // allowedIPs := []string{
+    //     "127.0.0.1",
+    //     "192.168.1.10",     // 具体 IPv4
+    //     "2001:db8::1",      // 具体 IPv6
+    //     "192.168.1.0/24",   // IPv4 范围
+    //     "2001:db8::/32",    // IPv6 范围
+    // }
+
+    allowedIPs := strings.Split(confVar.AllowedIp, ",")
+
+    if len(allowedIPs) > 0 {
+        // 使用 IP 白名单中间件
+        router.Use(IPWhitelistMiddleware(allowedIPs))
+    }
     // 定义路由
     router.GET("/api/v1/config", apiKeyMiddleware(confVar.XApiKey), func(c *gin.Context) {
         filePath := confVar.ApisixConfig
@@ -244,6 +288,7 @@ func main() {
     pflag.String("listen", ":5980", "listen address")
     pflag.String("release-mode", "true", "gin.ReleaseMode")
     pflag.String("x-api-key", "your-secret-api-key", "x-api-key")
+    pflag.String("allowed-ip", "", "Comma-separated list of allowed IPs")
     pflag.String("apisix-config", "", "apisix-config")
     pflag.String("apisix-reload-cmd", "", "apisix-reload-cmd")
     pflag.String("apisix-stop-cmd", "", "apisix-stop-cmd")
@@ -278,6 +323,7 @@ func main() {
         ApisixStopCmd: viper.GetString("apisix-stop-cmd"),
         ApisixStartCmd: viper.GetString("apisix-start-cmd"),
         ApisixReStartCmd: viper.GetString("apisix-restart-cmd"),
+        AllowedIp: viper.GetString("allowed-ip"),
     }
     //log.Printf("%+v\n", confVar)
 

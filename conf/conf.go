@@ -11,4 +11,5 @@ type Config struct {
 	ApisixStopCmd		string				`mapstructure:"apisix-stop-cmd"`
 	ApisixStartCmd		string				`mapstructure:"apisix-start-cmd"`
 	ApisixReStartCmd	string				`mapstructure:"apisix-restart-cmd"`
+	AllowedIp			string				`mapstructure:"allowed-ip"`
 }
