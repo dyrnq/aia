@@ -5,6 +5,7 @@ apisix instance agent (abbr. aia) ,is a cli for manage apisix instance, eg. read
 ```bash
 ./aia --help
 Usage of ./aia:
+      --allowed-ip string           Comma-separated list of allowed IPs
       --apisix-config string        apisix-config
       --apisix-reload-cmd string    apisix-reload-cmd
       --apisix-restart-cmd string   apisix-restart-cmd
@@ -13,6 +14,7 @@ Usage of ./aia:
   -h, --help                        aia, apisix instance agent.
       --listen string               listen address (default ":5980")
       --release-mode string         gin.ReleaseMode (default "true")
+      --version                     print version
       --x-api-key string            x-api-key (default "your-secret-api-key")
 ```
 
@@ -30,7 +32,8 @@ openssl rand -base64 32
 --apisix-stop-cmd "docker stop apisix || true" \
 --apisix-start-cmd "docker start apisix" \
 --apisix-restart-cmd "docker restart apisix" \
---x-api-key "1kD+yHW1hjE7Dy0RzVjIChENoR0TaI9Zt30K5rzDzeQ="
+--x-api-key "1kD+yHW1hjE7Dy0RzVjIChENoR0TaI9Zt30K5rzDzeQ=" \
+--allowed-ip 192.168.1.0/24,127.0.0.1,172.17.0.0/16
 ```
 
 ## http rest api
