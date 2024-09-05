@@ -42,24 +42,24 @@ openssl rand -base64 32
 
 ```bash
 ## read
-curl -s -H "X-API-KEy: 1kD+yHW1hjE7Dy0RzVjIChENoR0TaI9Zt30K5rzDzeQ=" -X GET http://127.0.0.1:5980/api/v1/config | jq -r ".data" | base64 -d
+curl --fail -sS -H "X-API-KEy: 1kD+yHW1hjE7Dy0RzVjIChENoR0TaI9Zt30K5rzDzeQ=" -X GET http://127.0.0.1:5980/api/v1/config | jq -r ".data" | base64 -d
 ```
 
 ```bash
 ## write
-curl -s -H "X-API-KEy: 1kD+yHW1hjE7Dy0RzVjIChENoR0TaI9Zt30K5rzDzeQ=" -X POST http://127.0.0.1:5980/api/v1/config -d "{\"data\": \"$base64Str\"}"
+curl --fail -sS -H "X-API-KEy: 1kD+yHW1hjE7Dy0RzVjIChENoR0TaI9Zt30K5rzDzeQ=" -X POST http://127.0.0.1:5980/api/v1/config -d "{\"data\": \"$base64Str\"}"
 ```
 
 ### apisix instance operate
 
 ```bash
 ## reload config
-curl -s -H "X-API-KEy: 1kD+yHW1hjE7Dy0RzVjIChENoR0TaI9Zt30K5rzDzeQ=" -X GET http://127.0.0.1:5980/api/v1/reload | jq
+curl --fail -sS -H "X-API-KEy: 1kD+yHW1hjE7Dy0RzVjIChENoR0TaI9Zt30K5rzDzeQ=" -X GET http://127.0.0.1:5980/api/v1/reload | jq
 ## stop
-curl -s -H "X-API-KEy: 1kD+yHW1hjE7Dy0RzVjIChENoR0TaI9Zt30K5rzDzeQ=" -X GET http://127.0.0.1:5980/api/v1/stop | jq
+curl --fail -sS -H "X-API-KEy: 1kD+yHW1hjE7Dy0RzVjIChENoR0TaI9Zt30K5rzDzeQ=" -X GET http://127.0.0.1:5980/api/v1/stop | jq
 ## start
-curl -s -H "X-API-KEy: 1kD+yHW1hjE7Dy0RzVjIChENoR0TaI9Zt30K5rzDzeQ=" -X GET http://127.0.0.1:5980/api/v1/start | jq
+curl --fail -sS -H "X-API-KEy: 1kD+yHW1hjE7Dy0RzVjIChENoR0TaI9Zt30K5rzDzeQ=" -X GET http://127.0.0.1:5980/api/v1/start | jq
 ## restart
-curl -s -H "X-API-KEy: 1kD+yHW1hjE7Dy0RzVjIChENoR0TaI9Zt30K5rzDzeQ=" -X GET http://127.0.0.1:5980/api/v1/restart | jq
+curl --fail -sS -H "X-API-KEy: 1kD+yHW1hjE7Dy0RzVjIChENoR0TaI9Zt30K5rzDzeQ=" -X GET http://127.0.0.1:5980/api/v1/restart | jq
 ```
 
