@@ -4,7 +4,7 @@ go 1.23.11
 
 require (
 	github.com/gin-gonic/gin v1.10.0
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.7
 	github.com/spf13/viper v1.19.0
 	sigs.k8s.io/yaml v1.4.0
 )
