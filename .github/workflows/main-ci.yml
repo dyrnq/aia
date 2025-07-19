@@ -1,0 +1,66 @@
+name: main branch Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install build-essential ca-certificates curl jq gnupg2 ca-certificates psmisc procps xz-utils rsync libglib2.0-dev libgpgme-dev libassuan-dev libbtrfs-dev libdevmapper-dev pkg-config
+
+      -
+        name: Checkout
+        uses: actions/checkout@v4
+
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      - name: Get gopath
+        id: get_gopath
+        run: echo ::set-output name=GOPATH::$(go env GOPATH)
+
+      - name: Get version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+
+      - name: Test version
+        run: |
+          echo ${{ steps.get_version.outputs.VERSION }}
+          echo ${{ github.ref }}
+
+      - run: go env
+      - run: go version
+
+      - name: Build binary
+        shell: bash
+        run: |
+          mkdir -p dist
+
+          version=${{ steps.get_version.outputs.VERSION }}
+          commit=$(git rev-parse HEAD)
+          buildDate=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          for dist in $(go tool dist list |grep -E "^linux|^darwin"); do
+          os=$(awk -F/ '{print $1}' <<< "${dist}")
+          arch=$(awk -F/ '{print $2}' <<< "${dist}")
+
+          CGO_ENABLED=0 go build -v \
+          -ldflags "-X main.version=$version -X main.commit=$commit -X main.buildDate=$buildDate" -o dist/aia-$os-$arch cmd/main.go
+          sha256sum dist/aia-$os-$arch > dist/aia-$os-$arch.sha256sum
+          done
+
+          # ls -lh dist
+          # touch ./body.txt
+          # echo "Release aia ${{ steps.get_version.outputs.VERSION }}, https://github.com/dyrnq/aia/releases/tag/${{ steps.get_version.outputs.VERSION }}." > ./body.txt
+          # for file in $(ls ./dist |grep -v sha256sum); do
+          #   echo "- https://github.com/dyrnq/aia/releases/download/${{ steps.get_version.outputs.VERSION }}/$file ([checksum](https://github.com/dyrnq/aia/releases/download/${{ steps.get_version.outputs.VERSION }}/$file.sha256sum))" >> ./body.txt
+          # done
